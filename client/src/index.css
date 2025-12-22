@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-outfit: "Outfit", sans-serif;
+  --color-usm-green: #006838;
+  --color-usm-yellow: #fdb913;
+}
+
+/* THE FORCE FIX */
+* {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  background-color: #f8fafc; /* Forced slate-50 hex */
+}
