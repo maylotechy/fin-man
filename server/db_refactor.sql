@@ -4,6 +4,7 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS full_name VARCHAR(255);
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS name VARCHAR(255);
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS current_balance NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS organization_type VARCHAR(100);
 
 -- 2. Migrate legacy password if exists
 DO $$
@@ -70,6 +71,9 @@ ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payee_merchant VARCHAR(255);
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS evidence_number VARCHAR(100);
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS semester VARCHAR(50);
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS school_year VARCHAR(50);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS duration VARCHAR(100);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS activity_approval_date DATE;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS resolution_number VARCHAR(100);
 
 -- 10. Insert Default Funds
 INSERT INTO funds (org_id, source_name, balance)
@@ -95,3 +99,15 @@ DROP TABLE IF EXISTS ppmp_items CASCADE;
 DROP TABLE IF EXISTS ppmp CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 ALTER TABLE transactions DROP COLUMN IF EXISTS ppmp_item_id;
+
+-- 12. Organization Officers Table
+CREATE TABLE IF NOT EXISTS organization_officers (
+    id SERIAL PRIMARY KEY,
+    org_id INT REFERENCES organizations(id) ON DELETE CASCADE,
+    treasurer_name VARCHAR(255),
+    auditor_name VARCHAR(255),
+    president_name VARCHAR(255),
+    adviser_name VARCHAR(255),
+    adviser2_name VARCHAR(255),
+    UNIQUE(org_id)
+);

@@ -1,4 +1,5 @@
 // @ts-ignore
+// @ts-ignore
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
@@ -19,15 +20,17 @@ import {
 import { Dialog, Transition } from '@headlessui/react';
 import toast from 'react-hot-toast';
 
-// @ts-ignore
+
 const DashboardView = ({ token, username, orgId }) => {
+    // const navigate = useNavigate(); // Removed
     const [transactions, setTransactions] = useState([]);
     const [funds, setFunds] = useState([]);
 
     // View State (Replaces OrgSettings)
     const [viewSettings, setViewSettings] = useState({
         semester: 'First Semester',
-        school_year: 'S.Y. 2025 - 2026'
+        school_year: 'S.Y. 2025 - 2026',
+        organization_type: 'Student Organization'
     });
 
     // Loading State for Settings
@@ -68,6 +71,9 @@ const DashboardView = ({ token, username, orgId }) => {
         event_name: '',
 
         document_type: 'Official Receipt',
+        duration: '',
+        activity_approval_date: '',
+        resolution_number: '',
     };
 
     const [formData, setFormData] = useState(initialFormState);
@@ -96,7 +102,8 @@ const DashboardView = ({ token, username, orgId }) => {
             if (settingsRes.data) {
                 setViewSettings({
                     semester: settingsRes.data.current_semester || 'First Semester',
-                    school_year: settingsRes.data.current_school_year || 'S.Y. 2025 - 2026'
+                    school_year: settingsRes.data.current_school_year || 'S.Y. 2025 - 2026',
+                    organization_type: settingsRes.data.organization_type || 'Student Organization'
                 });
             }
         } catch (err) {
@@ -146,7 +153,8 @@ const DashboardView = ({ token, username, orgId }) => {
         try {
             await axios.put(`http://localhost:5000/api/settings/${orgId}`, {
                 current_semester: viewSettings.semester,
-                current_school_year: viewSettings.school_year
+                current_school_year: viewSettings.school_year,
+                organization_type: viewSettings.organization_type
             }, { headers: { Authorization: `Bearer ${token}` } });
             toast.success("Global Period Updated Successfully");
         } catch (err) {
@@ -262,6 +270,7 @@ const DashboardView = ({ token, username, orgId }) => {
                             <option>S.Y. 2028 - 2029</option>
                             <option>S.Y. 2029 - 2030</option>
                         </select>
+                        <div className="w-px h-6 bg-slate-200"></div>
                         <button
                             onClick={handleSaveSettings}
                             title="Save as Global Default"
@@ -566,6 +575,24 @@ const DashboardView = ({ token, username, orgId }) => {
                                                         <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block">Event Name</label>
                                                         <input type="text" required placeholder="Event..." className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/20"
                                                             value={formData.event_name} onChange={(e) => setFormData({ ...formData, event_name: e.target.value })} />
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block">Duration</label>
+                                                        <input type="text" placeholder="e.g. 2 days" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/20"
+                                                            value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block">Approval Date</label>
+                                                        <input type="date" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/20"
+                                                            value={formData.activity_approval_date} onChange={(e) => setFormData({ ...formData, activity_approval_date: e.target.value })} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block">Resolution No.</label>
+                                                        <input type="text" placeholder="Res. #" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/20"
+                                                            value={formData.resolution_number} onChange={(e) => setFormData({ ...formData, resolution_number: e.target.value })} />
                                                     </div>
                                                 </div>
 

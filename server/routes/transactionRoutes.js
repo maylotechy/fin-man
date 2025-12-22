@@ -38,8 +38,12 @@ router.get('/funds/:org_id', async (req, res) => {
 router.post('/add', upload.single('image'), async (req, res) => {
     const client = await pool.connect();
     try {
-        const { org_id, type, category, amount, description, event_name, document_type, fund_id, confirmed_deficit, payee_merchant, evidence_number, semester, school_year, transaction_date } = req.body;
+        const { org_id, type, category, amount, description, event_name, document_type, fund_id, confirmed_deficit, payee_merchant, evidence_number, semester, school_year, transaction_date, duration, activity_approval_date, resolution_number } = req.body;
         const attachment_url = req.file ? req.file.path : null;
+
+        // Sanitize Dates (Empty String -> NULL) to prevent "invalid input syntax for type date"
+        const finalTransactionDate = transaction_date === '' ? null : transaction_date;
+        const finalApprovalDate = activity_approval_date === '' ? null : activity_approval_date;
 
         await client.query('BEGIN');
 
@@ -99,9 +103,9 @@ router.post('/add', upload.single('image'), async (req, res) => {
 
         // 4. Insert Transaction
         const newTransaction = await client.query(
-            `INSERT INTO transactions (org_id, type, category, amount, description, event_name, document_type, attachment_url, fund_id, payee_merchant, evidence_number, semester, school_year, transaction_date) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, COALESCE($14, CURRENT_TIMESTAMP)) RETURNING *`,
-            [org_id, type, category, amount, description, event_name, document_type, attachment_url, fund_id, payee_merchant, evidence_number, semester, school_year, transaction_date]
+            `INSERT INTO transactions (org_id, type, category, amount, description, event_name, document_type, attachment_url, fund_id, payee_merchant, evidence_number, semester, school_year, transaction_date, duration, activity_approval_date, resolution_number) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, COALESCE($14, CURRENT_TIMESTAMP), $15, $16, $17) RETURNING *`,
+            [org_id, type, category, amount, description, event_name, document_type, attachment_url, fund_id, payee_merchant, evidence_number, semester, school_year, finalTransactionDate, duration, finalApprovalDate, resolution_number]
         );
 
         // 5. Update Org General Balance

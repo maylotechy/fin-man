@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import DashboardView from './components/DashboardView';
 import ReportsPage from './components/ReportsPage';
+import SettingsPage from './components/SettingsPage';
 import { Toaster } from 'react-hot-toast';
 import { Dialog, Transition } from '@headlessui/react';
-import { LayoutDashboard, FileText, LogOut, AlertTriangle, X } from 'lucide-react';
+import { LayoutDashboard, FileText, LogOut, AlertTriangle, X, Settings } from 'lucide-react';
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -121,6 +122,18 @@ function App() {
                         <FileText size={22} className={activeTab === 'reports' ? 'text-white' : ''} />
                         <span className="text-sm">ISO Reports</span>
                     </button>
+
+                    <button
+                        onClick={() => setActiveTab('settings')}
+                        className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all ${activeTab === 'settings'
+                            ? 'bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-900/20'
+                            : 'text-emerald-100/70 hover:bg-emerald-900/50 hover:text-white'
+                            }`}
+                        title="Settings"
+                    >
+                        <Settings size={22} className={activeTab === 'settings' ? 'text-white' : ''} />
+                        <span className="text-sm">Org Settings</span>
+                    </button>
                 </div>
 
                 {/* Sidebar Footer */}
@@ -161,6 +174,7 @@ function App() {
                 <main className="px-10 pb-10">
                     {activeTab === 'dashboard' && <DashboardView token={token} username={currentUser} orgId={orgId} />}
                     {activeTab === 'reports' && <ReportsPage />}
+                    {activeTab === 'settings' && <SettingsPage />}
                 </main>
             </div>
 
