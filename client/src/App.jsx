@@ -14,6 +14,13 @@ function App() {
     const [orgId, setOrgId] = useState(null);
     const [activeTab, setActiveTab] = useState('dashboard');
 
+    // Global View State (Lifted from Dashboard)
+    const [viewSettings, setViewSettings] = useState({
+        semester: 'First Semester',
+        school_year: 'S.Y. 2025 - 2026',
+        organization_type: 'Student Organization'
+    });
+
     // Logout Confirmation State
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
@@ -25,10 +32,32 @@ function App() {
         if (storedToken && storedUser) {
             setToken(storedToken);
             setCurrentUser(storedUser);
-            if (storedOrgId) setOrgId(storedOrgId);
+            if (storedOrgId) {
+                setOrgId(storedOrgId);
+                // Fetch Global Settings to initialize View
+                fetchGlobalSettings(storedOrgId, storedToken);
+            }
             setIsAuthenticated(true);
         }
     }, []);
+
+    const fetchGlobalSettings = async (organizationId, userToken) => {
+        try {
+            const response = await fetch(`http://localhost:5000/api/settings/${organizationId}`, {
+                headers: { Authorization: `Bearer ${userToken}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setViewSettings(prev => ({
+                    semester: data.current_semester || 'First Semester',
+                    school_year: data.current_school_year || 'S.Y. 2025 - 2026',
+                    organization_type: data.organization_type || 'Student Organization'
+                }));
+            }
+        } catch (error) {
+            console.error("Failed to fetch global settings:", error);
+        }
+    };
 
     const handleLoginSuccess = (newToken, user, organizationId) => {
         setToken(newToken);
@@ -40,6 +69,7 @@ function App() {
         localStorage.setItem('token', newToken);
         localStorage.setItem('username', user);
         localStorage.setItem('org_id', organizationId);
+        fetchGlobalSettings(organizationId, newToken);
     };
 
     const confirmLogout = () => {
@@ -172,9 +202,9 @@ function App() {
 
                 {/* PAGE CONTENT */}
                 <main className="px-10 pb-10">
-                    {activeTab === 'dashboard' && <DashboardView token={token} username={currentUser} orgId={orgId} />}
+                    {activeTab === 'dashboard' && <DashboardView token={token} username={currentUser} orgId={orgId} viewSettings={viewSettings} setViewSettings={setViewSettings} />}
                     {activeTab === 'reports' && <ReportsPage />}
-                    {activeTab === 'settings' && <SettingsPage />}
+                    {activeTab === 'settings' && <SettingsPage viewSettings={viewSettings} />}
                 </main>
             </div>
 

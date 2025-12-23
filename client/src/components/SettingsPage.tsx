@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Save, Users } from 'lucide-react';
 
-const SettingsPage = () => {
+const SettingsPage = ({ viewSettings }: any) => {
     const token = localStorage.getItem('token');
     const orgId = localStorage.getItem('org_id');
     const [loading, setLoading] = useState(true);
@@ -21,8 +21,11 @@ const SettingsPage = () => {
     useEffect(() => {
         // @ts-ignore
         const fetchSettings = async () => {
+            if (!viewSettings) return;
+            setLoading(true);
             try {
-                const res = await axios.get(`http://localhost:5000/api/settings/${orgId}`, {
+                const query = `?semester=${encodeURIComponent(viewSettings.semester)}&school_year=${encodeURIComponent(viewSettings.school_year)}`;
+                const res = await axios.get(`http://localhost:5000/api/settings/${orgId}${query}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (res.data) {
@@ -37,13 +40,15 @@ const SettingsPage = () => {
                 }
             } catch (err) {
                 console.error(err);
-                toast.error("Failed to load settings");
+                // toast.error("Failed to load settings"); // Suppress error for new semesters with no data yet
+                // Reset form if not found
+                setSettings(prev => ({ ...prev, treasurer_name: '', auditor_name: '', president_name: '', adviser_name: '', adviser2_name: '' }));
             } finally {
                 setLoading(false);
             }
         };
         if (orgId) fetchSettings();
-    }, [orgId, token]);
+    }, [orgId, token, viewSettings]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSettings({ ...settings, [e.target.name]: e.target.value });
@@ -53,7 +58,11 @@ const SettingsPage = () => {
         e.preventDefault();
         setIsSaving(true);
         try {
-            await axios.put(`http://localhost:5000/api/settings/${orgId}`, settings, {
+            await axios.put(`http://localhost:5000/api/settings/${orgId}`, {
+                ...settings,
+                current_semester: viewSettings.semester,
+                current_school_year: viewSettings.school_year
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Officer Settings Saved!");
@@ -74,6 +83,11 @@ const SettingsPage = () => {
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight mb-2">Organization Settings</h1>
                         <p className="text-slate-400">Manage officer signatories for reports.</p>
+                        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-bold uppercase tracking-wider text-emerald-400">
+                            <span>{viewSettings?.semester}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-600" />
+                            <span>{viewSettings?.school_year}</span>
+                        </div>
                     </div>
                     <div className="bg-slate-800 p-4 rounded-2xl">
                         <Users size={32} className="text-emerald-400" />

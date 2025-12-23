@@ -109,5 +109,29 @@ CREATE TABLE IF NOT EXISTS organization_officers (
     president_name VARCHAR(255),
     adviser_name VARCHAR(255),
     adviser2_name VARCHAR(255),
-    UNIQUE(org_id)
+    semester VARCHAR(50) DEFAULT 'First Semester',
+    school_year VARCHAR(50) DEFAULT 'S.Y. 2025 - 2026',
+    UNIQUE(org_id, semester, school_year)
 );
+
+-- Drop old constraint if exists (Schema migration support)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'organization_officers_org_id_key') THEN
+        ALTER TABLE organization_officers DROP CONSTRAINT organization_officers_org_id_key;
+    END IF;
+    -- Add columns if they don't exist (for existing tables)
+    BEGIN
+        ALTER TABLE organization_officers ADD COLUMN semester VARCHAR(50) DEFAULT 'First Semester';
+    EXCEPTION WHEN duplicate_column THEN END;
+    
+    BEGIN
+        ALTER TABLE organization_officers ADD COLUMN school_year VARCHAR(50) DEFAULT 'S.Y. 2025 - 2026';
+    EXCEPTION WHEN duplicate_column THEN END;
+
+     -- Re-add constraint to include semester/year
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'organization_officers_org_id_semester_school_year_key') THEN
+        ALTER TABLE organization_officers ADD CONSTRAINT organization_officers_org_id_semester_school_year_key UNIQUE (org_id, semester, school_year);
+    END IF;
+END $$;
+

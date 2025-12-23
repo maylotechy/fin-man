@@ -21,20 +21,13 @@ import { Dialog, Transition } from '@headlessui/react';
 import toast from 'react-hot-toast';
 
 
-const DashboardView = ({ token, username, orgId }) => {
+const DashboardView = ({ token, username, orgId, viewSettings, setViewSettings }: any) => {
     // const navigate = useNavigate(); // Removed
     const [transactions, setTransactions] = useState([]);
     const [funds, setFunds] = useState([]);
 
-    // View State (Replaces OrgSettings)
-    const [viewSettings, setViewSettings] = useState({
-        semester: 'First Semester',
-        school_year: 'S.Y. 2025 - 2026',
-        organization_type: 'Student Organization'
-    });
-
-    // Loading State for Settings
-    const [isSettingsLoading, setIsSettingsLoading] = useState(true);
+    // Loading State
+    const [isLoading, setIsLoading] = useState(true);
 
     // Modal State
     const [isOpen, setIsOpen] = useState(false);
@@ -88,29 +81,20 @@ const DashboardView = ({ token, username, orgId }) => {
 
         try {
             // @ts-ignore
-            const [transRes, fundsRes, settingsRes] = await Promise.all([
+            const [transRes, fundsRes] = await Promise.all([
                 axios.get('http://localhost:5000/api/transactions', config),
-                axios.get(`http://localhost:5000/api/transactions/funds/${orgId}`, config),
-                axios.get(`http://localhost:5000/api/settings/${orgId}`, config)
+                axios.get(`http://localhost:5000/api/transactions/funds/${orgId}`, config)
             ]);
 
             const transData = transRes.data;
             setTransactions(transData);
             setFunds(fundsRes.data || []);
 
-            // Set Global View Settings from DB
-            if (settingsRes.data) {
-                setViewSettings({
-                    semester: settingsRes.data.current_semester || 'First Semester',
-                    school_year: settingsRes.data.current_school_year || 'S.Y. 2025 - 2026',
-                    organization_type: settingsRes.data.organization_type || 'Student Organization'
-                });
-            }
         } catch (err) {
             console.error("Data Sync Error:", err);
             toast.error("Failed to load dashboard data.");
         } finally {
-            setIsSettingsLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -460,14 +444,14 @@ const DashboardView = ({ token, username, orgId }) => {
                     </span>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            onClick={() => setCurrentPage((prev: number) => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
                             className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
                             Previous
                         </button>
                         <button
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            onClick={() => setCurrentPage((prev: number) => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
                             className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
