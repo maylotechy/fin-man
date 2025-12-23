@@ -1,55 +1,50 @@
-const { Pool } = require('pg');
-require('dotenv').config();
-
-const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-});
-
-const defaultFunds = [
-    'Allocation from University Admin',
-    'Membership Fees',
-    'Voluntary Contribution',
-    'Donations',
-    'Sponsorship',
-    'IGP Proceeds'
-];
+const pool = require('./config/db');
 
 async function seedFunds() {
     try {
-        console.log("Connecting to database...");
-        // Get all organizations
-        const orgRes = await pool.query('SELECT id, name FROM organizations');
-        const orgs = orgRes.rows;
+        console.log('Starting Funds Seeding...');
 
-        if (orgs.length === 0) {
-            console.log("No organizations found. Please create an organization first.");
-            return;
-        }
+        // 1. Get all Organizations
+        const orgs = await pool.query('SELECT id, username FROM organizations');
+        console.log(`Found ${orgs.rows.length} organizations.`);
 
-        for (const org of orgs) {
-            console.log(`Processing Org: ${org.name} (ID: ${org.id})`);
+        // 2. Default Funds List
+        const defaultFunds = [
+            'Allocation from University Admin',
+            'Membership Fees',
+            'Voluntary Contribution',
+            'Donations',
+            'Sponsorship',
+            'IGP Proceeds'
+        ];
+
+        for (const org of orgs.rows) {
+            console.log(`Checking funds for ${org.username}...`);
 
             for (const fundName of defaultFunds) {
                 // Check if fund exists
-                const check = await pool.query('SELECT id FROM funds WHERE org_id = $1 AND source_name = $2', [org.id, fundName]);
+                const check = await pool.query(
+                    'SELECT id FROM funds WHERE org_id = $1 AND source_name = $2',
+                    [org.id, fundName]
+                );
 
                 if (check.rows.length === 0) {
-                    await pool.query('INSERT INTO funds (org_id, source_name, balance) VALUES ($1, $2, 0.00)', [org.id, fundName]);
-                    console.log(`  + Added: ${fundName}`);
+                    await pool.query(
+                        'INSERT INTO funds (org_id, source_name, balance) VALUES ($1, $2, 0.00)',
+                        [org.id, fundName]
+                    );
+                    console.log(`   + Added: ${fundName}`);
                 } else {
-                    console.log(`  - Exists: ${fundName}`);
+                    // console.log(`   - Exists: ${fundName}`);
                 }
             }
         }
-        console.log("Done!");
+
+        console.log('Funds Seeding Complete!');
+        process.exit(0);
     } catch (err) {
-        console.error("Error seeding funds:", err);
-    } finally {
-        await pool.end();
+        console.error('Seeding Funds Failed:', err);
+        process.exit(1);
     }
 }
 

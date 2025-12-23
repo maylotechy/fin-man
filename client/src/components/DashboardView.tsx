@@ -82,8 +82,9 @@ const DashboardView = ({ token, username, orgId, viewSettings, setViewSettings }
         try {
             // @ts-ignore
             const [transRes, fundsRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/transactions', config),
-                axios.get(`http://localhost:5000/api/transactions/funds/${orgId}`, config)
+                axios.get(`http://localhost:5000/api/transactions?org_id=${orgId}`, config),
+                // Pass current View Semester/Year to fetch specific funds
+                axios.get(`http://localhost:5000/api/transactions/funds/${orgId}?semester=${viewSettings.semester}&school_year=${viewSettings.school_year}`, config)
             ]);
 
             const transData = transRes.data;
@@ -98,16 +99,17 @@ const DashboardView = ({ token, username, orgId, viewSettings, setViewSettings }
         }
     };
 
+    // Re-fetch funds when viewSettings change (to get updated balances for that semester)
     useEffect(() => {
         if (orgId) {
             fetchData();
         }
         // eslint-disable-next-line
-    }, [orgId]);
+    }, [orgId, viewSettings]);
 
     // Update form defaults when view settings change
     useEffect(() => {
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
             ...prev,
             semester: viewSettings.semester,
             school_year: viewSettings.school_year
@@ -320,11 +322,8 @@ const DashboardView = ({ token, username, orgId, viewSettings, setViewSettings }
                     <h3 className="text-slate-500 font-bold uppercase tracking-wider text-xs mb-3 ml-1">Fund Breakdown ({viewSettings.semester})</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {funds.map((fund: any) => {
-                            // Calculate Balance for THIS Semester only
-                            const fundTrans = currentSemTransactions.filter((t: any) => t.fund_id === fund.id);
-                            const fundIn = fundTrans.filter((t: any) => t.type === 'INFLOW').reduce((acc: any, c: any) => acc + Number(c.amount), 0);
-                            const fundOut = fundTrans.filter((t: any) => t.type === 'OUTFLOW').reduce((acc: any, c: any) => acc + Number(c.amount), 0);
-                            const semFundBal = fundIn - fundOut;
+                            // Use the balance directly from the DB (it's now semester-specific)
+                            const semFundBal = Number(fund.balance);
                             const isNegative = semFundBal < 0;
 
                             return (
@@ -400,37 +399,45 @@ const DashboardView = ({ token, username, orgId, viewSettings, setViewSettings }
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {paginatedTransactions.map((t: any) => (
-                                <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-8 py-6 align-top">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-slate-900 text-base">{new Date(t.transaction_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                            <span className="text-[10px] font-bold uppercase px-2 py-1 rounded border bg-blue-50 text-blue-600 border-blue-100 w-fit mt-1">{t.source_name}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-6 align-top">
-                                        <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded border ${t.type === 'INFLOW' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
-                                            {t.type}
-                                        </span>
-                                    </td>
-                                    <td className="px-8 py-6 align-top">
-                                        {/* Merchant / Payee */}
-                                        <p className="text-base font-bold text-slate-900 mb-1">{t.type === 'INFLOW' ? t.description : (t.payee_merchant || 'Unspecified Payee')}</p>
+                            {paginatedTransactions.length > 0 ? (
+                                paginatedTransactions.map((t: any) => (
+                                    <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-8 py-6 align-top">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-slate-900 text-base">{new Date(t.transaction_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded border bg-blue-50 text-blue-600 border-blue-100 w-fit mt-1">{t.source_name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6 align-top">
+                                            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded border ${t.type === 'INFLOW' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                                                {t.type}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-6 align-top">
+                                            {/* Merchant / Payee */}
+                                            <p className="text-base font-bold text-slate-900 mb-1">{t.type === 'INFLOW' ? t.description : (t.payee_merchant || 'Unspecified Payee')}</p>
 
-                                        {/* Description (Only for Outflow as secondary text) */}
-                                        {t.type === 'OUTFLOW' && <p className="text-sm font-medium text-slate-600 mb-2">{t.description}</p>}
+                                            {/* Description (Only for Outflow as secondary text) */}
+                                            {t.type === 'OUTFLOW' && <p className="text-sm font-medium text-slate-600 mb-2">{t.description}</p>}
 
-                                        {/* Meta Tags - Hide Category for Inflow */}
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            {t.event_name && <span className="text-[10px] uppercase font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">{t.event_name}</span>}
-                                            {t.type === 'OUTFLOW' && <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{t.category}</span>}
-                                        </div>
-                                    </td>
-                                    <td className={`px-8 py-6 text-right align-top font-bold text-base ${t.type === 'INFLOW' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                        {t.type === 'INFLOW' ? '+' : '-'} ₱{Number(t.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {/* Meta Tags - Hide Category for Inflow */}
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {t.event_name && <span className="text-[10px] uppercase font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">{t.event_name}</span>}
+                                                {t.type === 'OUTFLOW' && <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{t.category}</span>}
+                                            </div>
+                                        </td>
+                                        <td className={`px-8 py-6 text-right align-top font-bold text-base ${t.type === 'INFLOW' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            {t.type === 'INFLOW' ? '+' : '-'} ₱{Number(t.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={4} className="px-8 py-12 text-center text-slate-500 italic bg-slate-50/50">
+                                        No transaction history found for this period.
                                     </td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>

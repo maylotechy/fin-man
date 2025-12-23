@@ -59,6 +59,7 @@ const ReportsPage = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [reportType, setReportType] = useState<'SEMESTRAL' | 'LIQUIDATION'>('SEMESTRAL');
     const [organizationType, setOrganizationType] = useState('');
+    const [orgFullName, setOrgFullName] = useState('');
     const [officers, setOfficers] = useState({
         treasurer: ' ',
         auditor: ' ',
@@ -89,6 +90,7 @@ const ReportsPage = () => {
                     setSemester(settingsRes.data.current_semester || 'First Semester');
                     setSchoolYear(settingsRes.data.current_school_year || 'S.Y. 2025 - 2026');
                     setOrganizationType(settingsRes.data.organization_type || 'Student Organization');
+                    setOrgFullName(settingsRes.data.full_name || 'Student Organization');
                     setOfficers({
                         treasurer: settingsRes.data.treasurer_name || ' ',
                         auditor: settingsRes.data.auditor_name || ' ',
@@ -122,7 +124,7 @@ const ReportsPage = () => {
 
     const generateSemestralReport = () => {
         const doc = new jsPDF();
-        const orgName = "Philippine Society of Information Technology Students (USM-PSITS)";
+        const orgName = orgFullName || "Student Organization";
         const USM_GREEN = '#006838';
 
         try {
@@ -236,7 +238,7 @@ const ReportsPage = () => {
 
     const generateLiquidationReport = async () => {
         const doc = new jsPDF();
-        const orgName = "Philippine Society of Information Technology Students (USM-PSITS)";
+        const orgName = orgFullName || "Student Organization";
         const data = filteredData;
         const outflowData = data.filter((t: any) => t.type === 'OUTFLOW');
 

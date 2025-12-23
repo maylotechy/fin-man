@@ -10,7 +10,7 @@ router.get('/:org_id', async (req, res) => {
         console.log(`[GET Settings] Org: ${org_id}, Sem: ${semester}, SY: ${school_year}`);
 
         let query = `
-            SELECT o.current_semester, o.current_school_year, o.organization_type,
+            SELECT o.full_name, o.current_semester, o.current_school_year, o.organization_type,
                    oo.treasurer_name, oo.auditor_name, oo.president_name, oo.adviser_name, oo.adviser2_name
             FROM organizations o
             LEFT JOIN organization_officers oo ON o.id = oo.org_id

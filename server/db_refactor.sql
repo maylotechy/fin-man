@@ -41,7 +41,10 @@ CREATE TABLE funds (
     id SERIAL PRIMARY KEY,
     org_id INT REFERENCES organizations(id) ON DELETE CASCADE,
     source_name VARCHAR(255) NOT NULL,
-    balance NUMERIC(15, 2) DEFAULT 0.00
+    balance NUMERIC(15, 2) DEFAULT 0.00,
+    semester VARCHAR(50) DEFAULT 'First Semester',
+    school_year VARCHAR(50) DEFAULT 'S.Y. 2025 - 2026',
+    UNIQUE(org_id, source_name, semester, school_year)
 );
 
 -- 8. Create/Ensure Transactions table
